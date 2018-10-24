@@ -1,32 +1,8 @@
+"""
 
-class User:
+|   User - Publisher - Aggregator   |  SYSTEM
 
-    def __init__(self, name='default_user'):
-        self.name = name
-        self.permissions = 'low'
-        self.subscriptions = []
-        self.news = dict()
-        self.counter = 0
-
-    def subscribe(self, publisher, aggregator, permissions='low'):
-        self.subscriptions.append(publisher.name)
-        aggregator.subscribe(self, permissions, publisher)
-
-    def receive(self, publisher, document):
-        self.news[publisher.name] = document
-
-    def subscribe_all(self, aggregator):
-        aggregator.subscribe_me_all(self)
-
-    def print_news(self, publisher=None):
-        if publisher is None:
-            for element in self.subscriptions:
-                print(self.news[element])
-        else:
-            print(self.news[publisher])
-
-    def delete_subcription(self, publisher):
-        self.subscriptions.remove(publisher)
+"""
 
 
 class Publisher:
@@ -54,6 +30,36 @@ class Publisher:
         self.subs.add(new_sub)
 
 
+class User:
+
+    def __init__(self, name='default_user'):
+        self.name = name
+        self.permissions = 'low'
+        self.subscriptions = []
+        self.news = dict()
+        self.counter = 0
+
+    def subscribe(self, publisher, aggregator, permissions='low'):
+        self.subscriptions.append(publisher.name)
+        aggregator.subscribe(self, permissions, publisher)
+
+    def receive(self, publisher, document):
+        self.news[publisher.name] = document
+
+    def subscribe_all(self, aggregator, permissions='low'):
+        aggregator.subscribe_me_all(self, permissions)
+
+    def print_news(self, publisher=None):
+        if publisher is None:
+            for element in self.subscriptions:
+                print(self.news[element])
+        else:
+            print(self.news[publisher])
+
+    def delete_subcription(self, publisher):
+        self.subscriptions.remove(publisher)
+
+
 class Aggregator:
 
     def __init__(self, name='default_aggregator'):
@@ -72,10 +78,9 @@ class Aggregator:
             self.counter += 1
             # print(caller.name, "subscribing", publisher.name)
 
-    def subscribe_me_all(self, caller):
+    def subscribe_me_all(self, caller, permissions):
         for paper in self.publishers:
-            self.subscribe(caller, 'low', paper)
-            print(paper.name, caller.name)
+            caller.subscribe(paper, self, permissions)
 
     def remove(self, caller):
         if isinstance(caller, Publisher):
@@ -101,7 +106,6 @@ class Aggregator:
                 users.append(self.subscriptions[sub])
         return users
 
-
 giacomo = User("giacomo")
 marco = User("marco")
 andrea = User("andrea")
@@ -113,9 +117,10 @@ agg.subscribe(salvatore)        # subscribing publisher
 agg.subscribe(toms)             # subscribing publisher
 
 #giacomo.subscribe(salvatore, agg, 'mid')        # subscribe giacomo -> salvatore
-marco.subscribe(salvatore, agg, 'high')              # subscribe marco -> toms
-marco.subscribe(toms, agg, 'high')              # subscribe marco -> toms
-
+#giacomo.subscribe(toms, agg, 'mid')             # subscribe giacomo -> toms
+marco.subscribe(salvatore, agg, 'high')          # subscribe marco -> toms
+marco.subscribe(toms, agg, 'high')               # subscribe marco -> toms
+giacomo.subscribe_all(agg, 'mid')                       # subscribe giacomo --> to all
 
 salvatore.write_news("buon giorno")
 salvatore.write_news("attacco al cairo")
@@ -123,7 +128,7 @@ salvatore.write_news("processori 4 nanometri")
 
 salvatore.add_news(agg, salvatore.documents[0], 'high')
 
-giacomo.subscribe_all(agg)
+
 # print("\n", salvatore.name, "has", salvatore.subs, "as subscriber")
 # print("aggregator library:  ", agg.subscriptions)
 # print(giacomo.name, " -> ", giacomo.subscriptions)
@@ -133,8 +138,8 @@ giacomo.subscribe_all(agg)
 to_notify = agg.get_users_for_publisher(salvatore)
 # print("\n\nin giacomo mailbox there are: ", giacomo.news)
 # print("in marco mailbox there are: ", marco.news)
-print("giacomo è iscritto a ", giacomo.subscriptions)
-
+print("giacomo --> ", giacomo.subscriptions)
+print(agg.subscriptions)
 
 
 
