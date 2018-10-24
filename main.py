@@ -1,15 +1,19 @@
-class User:
 
-    subscriptions = set()
-    news = dict()
+class User:
 
     def __init__(self, name='default_user'):
         self.name = name
         self.permissions = 'low'
+        self.subscriptions = []
+        self.news = dict()
+        self.counter = 0
 
     def subscribe(self, publisher, aggregator, permissions='low'):
-        self.subscriptions.add(publisher.name)
+        self.subscriptions.append(publisher.name)
         aggregator.subscribe(self, permissions, publisher)
+
+    def receive(self, publisher, document):
+        self.news[publisher.name] = document
 
     def subscribe_all(self, aggregator):
         aggregator.subscribe_me_all(self)
@@ -27,17 +31,20 @@ class User:
 
 class Publisher:
 
-    documents = dict()
-    published = set()
-    subs = set()
-
     def __init__(self, name='default_publisher', aggregator='default_aggregator'):
         self.name = name
         self.aggregator = [aggregator]
+        self.documents = dict()
+        self.published = set()
+        self.subs = set()
+        self.counter = 0
 
-    def add_news(self, aggregators, uploading):
-        for aggr in aggregators:
-            aggr.update(self, uploading, permissions='low')
+    def add_news(self, aggregator, uploading, permissions='low'):
+            aggregator.update(self, uploading, permissions)
+
+    def write_news(self, document):
+        self.documents[self.counter] = document
+        self.counter += 1
 
     def subscribe_to_aggr(self, aggregators):
         for aggr in aggregators:
@@ -49,20 +56,26 @@ class Publisher:
 
 class Aggregator:
 
-    publishers = set()
-    subscriptions = dict(dict())
-
     def __init__(self, name='default_aggregator'):
         self.name = name
+        self.publishers = set()
+        self.subscriptions = dict(dict())
+        self.counter = 0
 
     def subscribe(self, caller, permissions='low', publisher=Publisher()):      # publisher wants to enlist itself
         if isinstance(caller, Publisher):
             self.publishers.add(caller)
 
         else:
-            self.subscriptions[publisher.name] = {caller.name: permissions}     # user subscribing to a publisher
+            self.subscriptions[publisher.name + "_" + str(self.counter)] = {caller: permissions}     # user subscribing to a publisher
             self.notify_to_pub(caller, publisher)
-            print(caller.name, "subcribing", publisher.name)
+            self.counter += 1
+            # print(caller.name, "subscribing", publisher.name)
+
+    def subscribe_me_all(self, caller):
+        for paper in self.publishers:
+            self.subscribe(caller, 'low', paper)
+            print(paper.name, caller.name)
 
     def remove(self, caller):
         if isinstance(caller, Publisher):
@@ -74,16 +87,19 @@ class Aggregator:
     def notify_to_pub(caller, publisher):
         publisher.add_sub(caller.name)
 
-    def update(self, publisher, permissions):
-        for user in (self.subscriptions):
-            print(user)
+    def update(self, publisher, document, permissions):
+        to_reach = self.get_users_for_publisher(publisher)
 
+        for user in range(0, len(to_reach)):
+            if list(to_reach[user].values())[0] == permissions:
+                list(to_reach[user].keys())[0].receive(publisher, document)
 
-
-
-
-
-
+    def get_users_for_publisher(self, publisher):
+        users = []
+        for sub in self.subscriptions:
+            if sub[:-2] == publisher.name:
+                users.append(self.subscriptions[sub])
+        return users
 
 
 giacomo = User("giacomo")
@@ -93,21 +109,31 @@ salvatore = Publisher("salvatore aranzulla")
 toms = Publisher("Tom's Hardware")
 agg = Aggregator()
 
-agg.subscribe(salvatore)
+agg.subscribe(salvatore)        # subscribing publisher
+agg.subscribe(toms)             # subscribing publisher
+
+#giacomo.subscribe(salvatore, agg, 'mid')        # subscribe giacomo -> salvatore
+marco.subscribe(salvatore, agg, 'high')              # subscribe marco -> toms
+marco.subscribe(toms, agg, 'high')              # subscribe marco -> toms
 
 
+salvatore.write_news("buon giorno")
+salvatore.write_news("attacco al cairo")
+salvatore.write_news("processori 4 nanometri")
 
-giacomo.subscribe(salvatore, agg, 'mid')
-#marco.subscribe(toms, agg, 'high')
+salvatore.add_news(agg, salvatore.documents[0], 'high')
 
+giacomo.subscribe_all(agg)
+# print("\n", salvatore.name, "has", salvatore.subs, "as subscriber")
+# print("aggregator library:  ", agg.subscriptions)
+# print(giacomo.name, " -> ", giacomo.subscriptions)
+# print(marco.name, " -> ", marco.subscriptions)
+# print(andrea.name, " -> ", andrea.subscriptions)
 
-
-print("\n", salvatore.name, "has", salvatore.subs, "as a subcriber")
-print("aggregator library:  ", agg.subscriptions)
-print(giacomo.name, " -> ", giacomo.subscriptions)
-print(marco.name, " -> ", marco.subscriptions)
-print(andrea.name, " -> ", andrea.subscriptions)
-
+to_notify = agg.get_users_for_publisher(salvatore)
+# print("\n\nin giacomo mailbox there are: ", giacomo.news)
+# print("in marco mailbox there are: ", marco.news)
+print("giacomo è iscritto a ", giacomo.subscriptions)
 
 
 
@@ -115,6 +141,7 @@ print(andrea.name, " -> ", andrea.subscriptions)
 class a:
     def __init__(self):
         self.nome = "a"
+
     def printa(self):
         print("metodo printa")
 
