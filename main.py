@@ -8,9 +8,9 @@ class User:
         self.permissions = 'low'
 
     def subscribe(self, publisher, aggregator, permissions='low'):
-        self.subscriptions.add(publisher)
-        #aggregator.subscribe(self, permissions, publisher)
-        aggregator.printa()
+        self.subscriptions.add(publisher.name)
+        aggregator.subscribe(self, permissions, publisher)
+
     def subscribe_all(self, aggregator):
         aggregator.subscribe_me_all(self)
 
@@ -35,9 +35,9 @@ class Publisher:
         self.name = name
         self.aggregator = [aggregator]
 
-    def add_news(self, aggregators):
+    def add_news(self, aggregators, uploading):
         for aggr in aggregators:
-            aggr.update(self)
+            aggr.update(self, uploading, permissions='low')
 
     def subscribe_to_aggr(self, aggregators):
         for aggr in aggregators:
@@ -45,15 +45,6 @@ class Publisher:
 
     def add_sub(self, new_sub):
         self.subs.add(new_sub)
-
-
-class List:
-    def __init__(self, name='default_list'):
-        self.name = name
-        self.publisher_list = []
-
-    def add(self, publisher):
-        self.publisher_list.append(publisher)
 
 
 class Aggregator:
@@ -71,6 +62,7 @@ class Aggregator:
         else:
             self.subscriptions[publisher.name] = {caller.name: permissions}     # user subscribing to a publisher
             self.notify_to_pub(caller, publisher)
+            print(caller.name, "subcribing", publisher.name)
 
     def remove(self, caller):
         if isinstance(caller, Publisher):
@@ -80,41 +72,54 @@ class Aggregator:
 
     @staticmethod
     def notify_to_pub(caller, publisher):
-        pass
+        publisher.add_sub(caller.name)
 
-    def printa(self):
-        print("a")
-
-
-   # def update(self, publisher):
- #       pass
-#
+    def update(self, publisher, permissions):
+        for user in (self.subscriptions):
+            print(user)
 
 
 
 
 
 
-omino = User()
-omino_1 = User("giacomo")
-omino_2 = User("marco")
-salvatore = Publisher()
+
+
+
+giacomo = User("giacomo")
+marco = User("marco")
+andrea = User("andrea")
+salvatore = Publisher("salvatore aranzulla")
+toms = Publisher("Tom's Hardware")
 agg = Aggregator()
-lista = List()
+
 agg.subscribe(salvatore)
 
-omino_1.subscribe(salvatore, agg, 'mid')
 
-print(agg.subscriptions)
+
+giacomo.subscribe(salvatore, agg, 'mid')
+#marco.subscribe(toms, agg, 'high')
+
+
+
+print("\n", salvatore.name, "has", salvatore.subs, "as a subcriber")
+print("aggregator library:  ", agg.subscriptions)
+print(giacomo.name, " -> ", giacomo.subscriptions)
+print(marco.name, " -> ", marco.subscriptions)
+print(andrea.name, " -> ", andrea.subscriptions)
+
+
+
+
 
 class a:
     def __init__(self):
         self.nome = "a"
     def printa(self):
-        print("ciao")
+        print("metodo printa")
 
-e = a()
-a.printa(a)
+
+
 
 
 
