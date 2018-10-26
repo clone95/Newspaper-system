@@ -1,6 +1,10 @@
 # management_system
 ## A system manager for newspaper reading:
 
+## Why did you make this?
+To practice with the Observer pattern and some classes advanced concepts in Python .
+
+
 ### USERS:
 Users can subscribe newspapers from a news aggregator.
 Newspapers can publish news on different height of "permissions" and just who has the right ones
